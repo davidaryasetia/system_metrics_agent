@@ -1,0 +1,8 @@
+psutil
+python-dotenv
+kafka-python
+flask
+flask-socketio
+python-socketio
+requests
+eventlet
