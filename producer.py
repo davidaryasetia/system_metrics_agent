@@ -5,13 +5,15 @@ import psutil
 from dotenv import load_dotenv
 from kafka import KafkaProducer
 import socketio
+import time 
+import urllib3
 
 # Load .env
 load_dotenv()
 
 KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
 TOPIC = os.getenv("KAFKA_TOPIC")
-EMIT_INTERVAL = float(os.getenv("EMIT_INTERVAL_SEC", 0.001))
+EMIT_INTERVAL = float(os.getenv("EMIT_INTERVAL_EVERY_SECONDS"))
 SOCKETIO_SERVER = os.getenv("SOCKETIO_SERVER", "http://localhost:5000")
 
 # Kafka Producer
@@ -20,11 +22,20 @@ producer = KafkaProducer(
     value_serializer=lambda v: json.dumps(v).encode("utf-8")
 )
 
-# Socket.IO client (connect to internal realtime server)
+# Socket.IO client
 sio = socketio.Client()
+connected = False
 
-print("Connecting to SocketIO server...")
-sio.connect(SOCKETIO_SERVER)  # Sesuaikan port jika beda
+while not connected:
+    try:
+        print("Connecting to SocketIO server...")
+        sio.connect(SOCKETIO_SERVER) 
+        connected = True
+        print("Connected to SocketIO Server ✅")
+    except (socketio.exceptions.ConnectionError, urllib3.exceptions.NewConnectionError) as e:
+        print(f"Connection failed: {e}. Retrying in 5 seconds...")
+        time.sleep(5)
+
 print("Connected to SocketIO server ✔")
 
 def get_cpu_metrics():
@@ -41,7 +52,7 @@ if __name__ == "__main__":
 
     while True:
         data = get_cpu_metrics()
-
+        print("Metrics data")
         # Send to Kafka
         producer.send(TOPIC, data)
         producer.flush()
