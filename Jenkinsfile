@@ -14,7 +14,7 @@ pipeline {
                 dir ("${APP_DIR}"){
                     sh """ 
                     git config --global --add safe.directory ${APP_DIR}
-                    git pull 
+                    git pull origin main
                     """
                 }
             }
